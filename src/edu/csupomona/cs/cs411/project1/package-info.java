@@ -20,7 +20,8 @@
  * <a href="https://en.wikipedia.org/wiki/Lexical_analysis">lexical analyzer</a>,
  * or scanner as it is commonly known. More specifically, this package contains
  * a lexical analyzer for the Toy Programming Language with an enumeration
- * {@link Keywords} containing all keyword tokens accepted by the language.
+ * {@link edu.csupomona.cs.cs411.project1.Keywords} containing all keyword
+ * tokens accepted by the language.
  *
  * @author Collin Smith <collinsmith@csupomona.edu>
  */
