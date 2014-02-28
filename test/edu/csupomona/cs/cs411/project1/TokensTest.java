@@ -39,15 +39,15 @@ public class TokensTest {
 	public void testGetRegex() {
 		System.out.println("token regexes");
 
-		String regex = Keywords._boolconstant.getRegex();
-		System.out.println("\t" + Keywords._boolconstant);
+		String regex = Keywords._booleanliteral.getRegex();
+		System.out.println("\t" + Keywords._booleanliteral);
 		Assert.assertTrue("true".matches(regex));
 		Assert.assertTrue("false".matches(regex));
 		Assert.assertFalse("nottrue".matches(regex));
 		Assert.assertFalse("falses".matches(regex));
 
-		regex = Keywords._intconstant.getRegex();
-		System.out.println("\t" + Keywords._intconstant);
+		regex = Keywords._integerliteral.getRegex();
+		System.out.println("\t" + Keywords._integerliteral);
 		Assert.assertTrue("8".matches(regex));
 		Assert.assertTrue("012".matches(regex));
 		Assert.assertTrue("0x0".matches(regex));
@@ -56,8 +56,8 @@ public class TokensTest {
 		Assert.assertTrue("0".matches(regex));
 		Assert.assertFalse("00x01".matches(regex));
 
-		regex = Keywords._doubleconstant.getRegex();
-		System.out.println("\t" + Keywords._doubleconstant);
+		regex = Keywords._doubleliteral.getRegex();
+		System.out.println("\t" + Keywords._doubleliteral);
 		Assert.assertFalse(".12".matches(regex));
 		Assert.assertTrue("0.12".matches(regex));
 		Assert.assertTrue("12.".matches(regex));
@@ -67,8 +67,8 @@ public class TokensTest {
 		Assert.assertFalse("1.2E".matches(regex));
 		Assert.assertTrue("12.E2".matches(regex));
 
-		regex = Keywords._stringconstant.getRegex();
-		System.out.println("\t" + Keywords._stringconstant);
+		regex = Keywords._stringliteral.getRegex();
+		System.out.println("\t" + Keywords._stringliteral);
 		Assert.assertTrue("\"\"".matches(regex));
 		Assert.assertTrue("\"regex\"".matches(regex));
 		Assert.assertFalse("\"regex".matches(regex));

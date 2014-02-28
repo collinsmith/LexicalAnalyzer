@@ -57,12 +57,12 @@ public enum Keywords implements Token {
 	_rightbrace("}"),
 
 	// Constants
-	_boolconstant("(true|false)"),
-	_intconstant("[+-]?(([0-9]+)|(0(x|X)[a-fA-F0-9]+))"),
-	_doubleconstant("[0-9]+\\.[0-9]*((e|E)[+-]?[0-9]+)?"),
-	_stringconstant("\".*\""),
+	_booleanliteral("(true|false)"),
+	_integerliteral("[+-]?(([0-9]+)|(0(x|X)[a-fA-F0-9]+))"),
+	_doubleliteral("[0-9]+\\.[0-9]*((e|E)[+-]?[0-9]+)?"),
+	_stringliteral("\".*\""),
 
-	// Other Identifier
+	// Other Identifiers
 	_id("([a-zA-Z][a-zA-Z0-9_]*)");
 
 	/**
@@ -72,6 +72,16 @@ public enum Keywords implements Token {
 	public static final Set<Keywords> ACTUAL_KEYWORDS;
 	static {
 		ACTUAL_KEYWORDS = Collections.unmodifiableSet(EnumSet.range(_bool, _while));
+	}
+
+	/**
+	 * Subset of {@link Keywords} which are used as operators. These operators
+	 * cannot be used in regular expression matches due to the fact that their
+	 * definitions conflict with those of regular expressions.
+	 */
+	public static final Set<Keywords> OPERATORS;
+	static {
+		OPERATORS = Collections.unmodifiableSet(EnumSet.range(_plus, _rightbrace));
 	}
 
 	/**

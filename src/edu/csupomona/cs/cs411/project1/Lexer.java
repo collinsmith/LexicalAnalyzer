@@ -1,7 +1,7 @@
 package edu.csupomona.cs.cs411.project1;
 
-import edu.csupomona.cs.cs411.project1.trie.MultiTrie;
 import edu.csupomona.cs.cs411.project1.trie.ArrayMultiTrie;
+import edu.csupomona.cs.cs411.project1.trie.MultiTrie;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
@@ -135,8 +135,8 @@ public class Lexer implements Iterable<Token> {
 				String token = tokenBuilder.toString();
 				if (trie.contains(token)) {
 					t = Keywords.valueOf('_' + token);
-				} else if (token.matches(Keywords._boolconstant.getRegex())) {
-					t = Keywords._boolconstant;
+				} else if (token.matches(Keywords._booleanliteral.getRegex())) {
+					t = Keywords._booleanliteral;
 				} else {
 					assert token.matches(Keywords._id.getRegex());
 					trie.insert(token, IDENTIFIER_SENTINEL);
@@ -150,8 +150,8 @@ public class Lexer implements Iterable<Token> {
 
 				if (c == '0') {
 					if (!r.ready()) {
-						t = Keywords._intconstant;
-						assert intBuilder.toString().matches(Keywords._intconstant.getRegex());
+						t = Keywords._integerliteral;
+						assert intBuilder.toString().matches(t.getRegex());
 						return t;
 					}
 
@@ -160,8 +160,8 @@ public class Lexer implements Iterable<Token> {
 					if (c == 'x' || c == 'X') {
 						if (!r.ready()) {
 							r.reset();
-							t = Keywords._intconstant;
-							assert intBuilder.toString().matches(Keywords._intconstant.getRegex());
+							t = Keywords._integerliteral;
+							assert intBuilder.toString().matches(t.getRegex());
 							return t;
 						}
 
@@ -170,12 +170,12 @@ public class Lexer implements Iterable<Token> {
 
 						c = (char)r.read();
 						if (isHexDigit(c)) {
-							t = Keywords._intconstant;
+							t = Keywords._integerliteral;
 							hexBuilder.append(c);
 						} else {
 							r.reset();
-							t = Keywords._intconstant;
-							assert intBuilder.toString().matches(Keywords._intconstant.getRegex());
+							t = Keywords._integerliteral;
+							assert intBuilder.toString().matches(t.getRegex());
 							return t;
 						}
 
@@ -186,12 +186,12 @@ public class Lexer implements Iterable<Token> {
 								hexBuilder.append(c);
 							} else {
 								r.reset();
-								assert hexBuilder.toString().matches(Keywords._intconstant.getRegex());
+								assert hexBuilder.toString().matches(t.getRegex());
 								return t;
 							}
 						}
 
-						assert hexBuilder.toString().matches(Keywords._intconstant.getRegex());
+						assert hexBuilder.toString().matches(t.getRegex());
 						return t;
 					} else {
 						r.reset();
@@ -200,7 +200,7 @@ public class Lexer implements Iterable<Token> {
 				}
 
 				if (Character.isDigit(c)) {
-					t = Keywords._intconstant;
+					t = Keywords._integerliteral;
 					intLoop: while (r.ready()) {
 						r.mark(1);
 						c = (char)r.read();
@@ -209,7 +209,7 @@ public class Lexer implements Iterable<Token> {
 						} else {
 							switch (c) {
 								case '.':
-									t = Keywords._doubleconstant;
+									t = Keywords._doubleliteral;
 
 									StringBuilder doubleBuilder = new StringBuilder(intBuilder);
 									doubleBuilder.append(c);
@@ -225,7 +225,7 @@ public class Lexer implements Iterable<Token> {
 												case 'E':
 													if (!r.ready()) {
 														r.reset();
-														assert doubleBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+														assert doubleBuilder.toString().matches(t.getRegex());
 														return t;
 													}
 
@@ -236,7 +236,7 @@ public class Lexer implements Iterable<Token> {
 													if (c == '+' || c == '-') {
 														if (!r.ready()) {
 															r.reset();
-															assert doubleBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+															assert doubleBuilder.toString().matches(t.getRegex());
 															return t;
 														}
 
@@ -252,13 +252,13 @@ public class Lexer implements Iterable<Token> {
 																	expBuilder.append(c);
 																} else {
 																	r.reset();
-																	assert expBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+																	assert expBuilder.toString().matches(t.getRegex());
 																	return t;
 																}
 															}
 														} else {
 															r.reset();
-															assert doubleBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+															assert doubleBuilder.toString().matches(t.getRegex());
 															return t;
 														}
 													} else if (Character.isDigit(c)) {
@@ -270,13 +270,13 @@ public class Lexer implements Iterable<Token> {
 																expBuilder.append(c);
 															} else {
 																r.reset();
-																assert expBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+																assert expBuilder.toString().matches(t.getRegex());
 																return t;
 															}
 														}
 													} else {
 														r.reset();
-														assert doubleBuilder.toString().matches(Keywords._doubleconstant.getRegex());
+														assert doubleBuilder.toString().matches(t.getRegex());
 														return t;
 													}
 
@@ -296,7 +296,7 @@ public class Lexer implements Iterable<Token> {
 						}
 					}
 
-					assert intBuilder.toString().matches(Keywords._intconstant.getRegex());
+					assert intBuilder.toString().matches(t.getRegex());
 					return t;
 				}
 
@@ -309,7 +309,7 @@ public class Lexer implements Iterable<Token> {
 					c = (char)r.read();
 					switch (c) {
 						case '\"':
-							t = Keywords._stringconstant;
+							t = Keywords._stringliteral;
 							stringBuilder.append(c);
 							break stringReader;
 						case '\n':
@@ -322,7 +322,7 @@ public class Lexer implements Iterable<Token> {
 				}
 
 				if (t != null) {
-					assert stringBuilder.toString().matches(Keywords._stringconstant.getRegex());
+					assert stringBuilder.toString().matches(t.getRegex());
 				}
 
 				return t;
