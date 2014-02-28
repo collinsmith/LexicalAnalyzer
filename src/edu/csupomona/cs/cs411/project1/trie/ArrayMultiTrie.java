@@ -176,7 +176,6 @@ public class ArrayMultiTrie implements MultiTrie<String> {
 	 */
 	private void create(char[] chars, int start, char sentinel) {
 		assert chars != null;
-		// TODO: start < chars.length? for loop will handle
 		assert 0 <= start;
 		checkAndGrow(chars.length-start+1);
 		for (int i = start; i < chars.length; i++) {

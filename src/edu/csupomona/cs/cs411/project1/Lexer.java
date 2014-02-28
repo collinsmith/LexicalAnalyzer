@@ -108,11 +108,6 @@ public class Lexer implements Iterable<Token> {
 			c = (char)r.read();
 
 			if (Character.isWhitespace(c)) {
-				// TODO uncomment this to print line separators in out stream when analyzing
-				//if (c == '\n') {
-				//	System.out.format("%n");
-				//}
-
 				continue;
 			}
 
