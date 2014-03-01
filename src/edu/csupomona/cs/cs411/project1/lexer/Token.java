@@ -1,4 +1,4 @@
-package edu.csupomona.cs.cs411.project1;
+package edu.csupomona.cs.cs411.project1.lexer;
 
 /**
  * Interface which represents a Token. A Token should have some kind of

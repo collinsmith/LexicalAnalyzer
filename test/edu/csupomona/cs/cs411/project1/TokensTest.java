@@ -6,6 +6,7 @@
 
 package edu.csupomona.cs.cs411.project1;
 
+import edu.csupomona.cs.cs411.project1.lexer.Keywords;
 import junit.framework.Assert;
 import org.junit.Test;
 

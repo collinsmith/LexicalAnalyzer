@@ -1,5 +1,5 @@
-import edu.csupomona.cs.cs411.project1.Lexer;
-import edu.csupomona.cs.cs411.project1.Token;
+import edu.csupomona.cs.cs411.project1.lexer.Lexer;
+import edu.csupomona.cs.cs411.project1.lexer.Token;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

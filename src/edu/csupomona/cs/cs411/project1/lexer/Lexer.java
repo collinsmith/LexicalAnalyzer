@@ -1,4 +1,4 @@
-package edu.csupomona.cs.cs411.project1;
+package edu.csupomona.cs.cs411.project1.lexer;
 
 import edu.csupomona.cs.cs411.project1.trie.ArrayMultiTrie;
 import edu.csupomona.cs.cs411.project1.trie.MultiTrie;
@@ -30,6 +30,8 @@ public class Lexer implements Iterable<Token> {
 	 */
 	private final Reader r;
 
+	private Token nextToken;
+
 	/**
 	 * Constructs a {@link Lexer} which will analyze a given {@link Reader}.
 	 *
@@ -55,7 +57,11 @@ public class Lexer implements Iterable<Token> {
 			 */
 			@Override
 			public boolean hasNext() {
-				return Lexer.this.hasNext();
+				try {
+					return Lexer.this.hasNext();
+				} catch (IOException e) {
+					return false;
+				}
 			}
 
 			/**
@@ -85,13 +91,16 @@ public class Lexer implements Iterable<Token> {
 	 * {@link Lexer}
 	 *
 	 * @return {@code true} if there is, otherwise {@code false}
+	 *
+	 * @throws IOException when the Reader cannot be read or reset
 	 */
-	public boolean hasNext() {
-		try {
-			return r.ready();
-		} catch (IOException e) {
-			return false;
+	public boolean hasNext() throws IOException {
+		if (nextToken != null) {
+			return true;
 		}
+
+		nextToken = next();
+		return nextToken != null;
 	}
 
 	/**
@@ -102,6 +111,12 @@ public class Lexer implements Iterable<Token> {
 	 * @throws IOException when the Reader cannot be read or reset
 	 */
 	public Token next() throws IOException {
+		if (nextToken != null) {
+			Token t = nextToken;
+			nextToken = null;
+			return t;
+		}
+
 		char c;
 		Token t = null;
 		reader: while (r.ready()) {

@@ -1,4 +1,4 @@
-package edu.csupomona.cs.cs411.project1;
+package edu.csupomona.cs.cs411.project1.lexer;
 
 import java.util.Collections;
 import java.util.EnumSet;
