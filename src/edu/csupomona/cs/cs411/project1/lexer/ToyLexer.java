@@ -44,10 +44,14 @@ public class ToyLexer extends AbstractLexer {
 	@Override
 	public Token next(Reader r) {
 		try {
-			char c;
+			char c = (char)-1;
 			Token t = null;
 			reader: while (r.ready()) {
 				c = (char)r.read();
+				
+				if ((int)c == -1) {
+					return ToyKeywords._EOF;
+				}
 
 				if (Character.isWhitespace(c)) {
 					continue;
@@ -449,6 +453,9 @@ public class ToyLexer extends AbstractLexer {
 				return t;
 			}
 		} catch (IOException e) {
+			if ((int)c == -1) {
+				return ToyKeywords._EOF;
+			}
 		}
 
 		return null;
