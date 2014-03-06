@@ -1,4 +1,4 @@
-import edu.csupomona.cs.cs411.project1.lexer.Lexer;
+import edu.csupomona.cs.cs411.project1.lexer.ToyLexer;
 import edu.csupomona.cs.cs411.project1.lexer.Token;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 
 public class Main {
 	public static void main(String[] args) {
-		Lexer l;
+		ToyLexer l;
 		for (String arg : args) {
 			Path p = Paths.get(arg);
 			if (!Files.isReadable(p)) {
@@ -20,7 +20,7 @@ public class Main {
 
 			try (		InputStream in = Files.newInputStream(p);
 					BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
-				l = new Lexer(br);
+				l = new ToyLexer(br);
 				for (Token t : l) {
 					// Token stream
 				}

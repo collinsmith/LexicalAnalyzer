@@ -14,4 +14,20 @@ public interface Token {
 	 * @return regex representing this Token
 	 */
 	String getRegex();
+
+	/**
+	 * Returns whether or not the regex value for this token should be
+	 * interpreted as a regular expression or as a literal value.
+	 *
+	 * @return {@code true} if this token is actually represented by a regular
+	 *	expression, otherwise {@code false} if it is a literal value
+	 */
+	boolean isRegex();
+
+	/**
+	 * Returns the unique index identifying this {@link Token}.
+	 *
+	 * @return integer representing this token
+	 */
+	int getId();
 }
