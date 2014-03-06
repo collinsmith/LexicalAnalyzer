@@ -11,6 +11,9 @@ import java.util.Set;
  * @author Collin Smith <collinsmith@csupomona.edu>
  */
 public enum ToyKeywords implements Token {
+	// Special EOF token to mark end of file
+	_EOF("$", false),
+	
 	// ToyKeywords
 	_bool("bool", false),
 	_break("break", false),
