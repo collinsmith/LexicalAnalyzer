@@ -43,12 +43,12 @@ public class ToyLexer extends AbstractLexer {
 	 */
 	@Override
 	public Token next(Reader r) {
+		char c = (char)-1;
 		try {
-			char c = (char)-1;
 			Token t = null;
 			reader: while (r.ready()) {
 				c = (char)r.read();
-				
+
 				if ((int)c == -1) {
 					return ToyKeywords._EOF;
 				}
