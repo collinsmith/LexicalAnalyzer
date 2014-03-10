@@ -38,4 +38,13 @@ public class TokenStream {
 
 		return LEXER.next(READER);
 	}
+
+	public Token peek() {
+		if (nextToken != null) {
+			return nextToken;
+		}
+
+		nextToken = LEXER.next(READER);
+		return nextToken;
+	}
 }
