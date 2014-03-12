@@ -1,6 +1,5 @@
 package edu.csupomona.cs.cs411.project1.lexer;
 
-import java.io.IOException;
 import java.io.Reader;
 
 public class TokenStream {
@@ -15,18 +14,16 @@ public class TokenStream {
 	}
 
 	public boolean hasMore() {
-		try {
-			READER.ready();
-		} catch (IOException e) {
-			return false;
-		}
+		return peek() != null;
+	}
 
+	public Token peek() {
 		if (nextToken != null) {
-			return true;
+			return nextToken;
 		}
 
 		nextToken = LEXER.next(READER);
-		return nextToken != null;
+		return nextToken;
 	}
 
 	public Token next() {
@@ -37,14 +34,5 @@ public class TokenStream {
 		}
 
 		return LEXER.next(READER);
-	}
-
-	public Token peek() {
-		if (nextToken != null) {
-			return nextToken;
-		}
-
-		nextToken = LEXER.next(READER);
-		return nextToken;
 	}
 }
