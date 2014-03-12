@@ -29,7 +29,7 @@ public class TokenStream {
 		return nextToken != null;
 	}
 
-	public Token getNext() {
+	public Token next() {
 		if (nextToken != null) {
 			Token t = nextToken;
 			nextToken = null;

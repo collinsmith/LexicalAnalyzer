@@ -1,5 +1,6 @@
 package edu.csupomona.cs.cs411.project1.lexer;
 
+import com.google.common.base.Preconditions;
 import edu.csupomona.cs.cs411.project1.trie.ArrayMultiTrie;
 import edu.csupomona.cs.cs411.project1.trie.MultiTrie;
 import java.io.IOException;
@@ -38,422 +39,373 @@ public class ToyLexer extends AbstractLexer {
 	 * Returns the next {@link Token} within this {@link ToyLexer}
 	 *
 	 * @param r the reader requesting to be analyzed
-	 * @return the next Token in the given Reader, or {@code null} if stream
-	 *	is empty or has encountered an invalid token.
+	 * @return the next Token in the given Reader, {@link ToyKeywords#_EOF} if
+	 *	the end of file has been reached, or {@code null} if the next token
+	 *	is invalid.
 	 */
-	@Override
 	public Token next(Reader r) {
-		char c = (char)-1;
+		Preconditions.checkArgument(r.markSupported(), "Reader must support marking for efficient analyzing!");
+
+		//Token t;
+		int i = -1;
 		try {
-			Token t = null;
-			reader: while (r.ready()) {
-				c = (char)r.read();
-
-				if ((int)c == -1) {
-					return ToyKeywords._EOF;
+			//char c;
+			Reader:
+			while (r.ready()) {
+				i = r.read();
+				if (i == -1) {
+					break Reader;
 				}
 
-				if (Character.isWhitespace(c)) {
-					continue;
+				if (Character.isWhitespace(i)) {
+					continue Reader;
 				}
 
-				t = null;
-				if (Character.isLetter(c)) {
-					StringBuilder tokenBuilder = new StringBuilder();
-					tokenBuilder.append(c);
+				if (Character.isLetter(i)) {
+					// Attempt to read an identifier (or similar)
+					StringBuilder idBuilder = new StringBuilder();
+					idBuilder.appendCodePoint(i);
+					while (r.ready()) {
+						// Only append while we are not blocked
+						r.mark(1);
+						i = r.read();
+						if (Character.isLetterOrDigit(i) || i == '_') {
+							// Continually read remaining id characters
+							idBuilder.appendCodePoint(i);
+							continue;
+						}
 
+						r.reset();
+						break;
+					}
+
+					// Check if the "id" is really a keyword or boolean literal
+					String id = idBuilder.toString();
+					if (trie.contains(id)) {
+						return ToyKeywords.valueOf('_' + id);
+					} else if (id.matches(ToyKeywords._booleanliteral.getRegex())) {
+						return ToyKeywords._booleanliteral;
+					}
+
+					// What we have should be a valid identifier, so return it
+					assert id.matches(ToyKeywords._id.getRegex());
+					trie.insert(id, IDENTIFIER_SENTINEL);
+					return ToyKeywords._id;
+				} else if (Character.isDigit(i)) {
+					// Attempt to read a number (int or double)
+					StringBuilder intBuilder = new StringBuilder();
+					intBuilder.appendCodePoint(i);
+
+					// Check if the number is in hexadecimal
+					if (i == '0') {
+						// If our initial character is 0, assume hex
+						if (!r.ready()) {
+							// Because we cannot confirm that this is in hex, and we cannot read more, return 0 as an integer literal
+							assert intBuilder.toString().matches(ToyKeywords._integerliteral.getRegex());
+							return ToyKeywords._integerliteral;
+						}
+
+						// We need at least 2 lookahead reads to see if this is a valid hex number
+						r.mark(2);
+						i = r.read();
+						if (i == 'x' || i == 'X') {
+							if (!r.ready()) {
+								// We cannot confirm that it is in hex, so return 0 as an integer literal and unread 'x' or 'X'
+								r.reset();
+								assert intBuilder.toString().matches(ToyKeywords._integerliteral.getRegex());
+								return ToyKeywords._integerliteral;
+							}
+
+							// Confirm that the next character is a hex character so we have a confirmed hex starter
+							StringBuilder hexBuilder = new StringBuilder(intBuilder);
+							hexBuilder.appendCodePoint(i);
+							i = r.read();
+							if (isHexDigit(i)) {
+								// We have a hexadecimal number
+								hexBuilder.appendCodePoint(i);
+								while (r.ready()) {
+									// Only append while we are not blocked
+									r.mark(1);
+									i = r.read();
+									if (isHexDigit(i)) {
+										// Continually read remaining hexadecimal digits
+										hexBuilder.appendCodePoint(i);
+										continue;
+									}
+
+									r.reset();
+									break;
+								}
+
+								// We should have a valid hexadecimal integer, so return it
+								assert hexBuilder.toString().matches(ToyKeywords._integerliteral.getRegex());
+								return ToyKeywords._integerliteral;
+							}
+
+							// We only had "0x", so interpret this as a 0 integer literal and unread previous 2 characters
+							r.reset();
+							assert intBuilder.toString().matches(ToyKeywords._integerliteral.getRegex());
+							return ToyKeywords._integerliteral;
+						}
+
+						// We did not encounter an 'x' or 'X', so this is not a hexadecimal number
+						r.reset();
+					}
+
+					// It was not in hex, check if we have a regular integer or double
+					Integer_Loop:
 					while (r.ready()) {
 						r.mark(1);
-						c = (char)r.read();
-						if (Character.isLetterOrDigit(c) || c == '_') {
-							tokenBuilder.append(c);
-						} else {
-							r.reset();
-							break;
-						}
-					}
-
-					String token = tokenBuilder.toString();
-					if (trie.contains(token)) {
-						t = ToyKeywords.valueOf('_' + token);
-					} else if (token.matches(ToyKeywords._booleanliteral.getRegex())) {
-						t = ToyKeywords._booleanliteral;
-					} else {
-						assert token.matches(ToyKeywords._id.getRegex());
-						trie.insert(token, IDENTIFIER_SENTINEL);
-						t = ToyKeywords._id;
-					}
-
-					return t;
-				} else if (Character.isDigit(c)) {
-					StringBuilder intBuilder = new StringBuilder();
-					intBuilder.append(c);
-
-					if (c == '0') {
-						if (!r.ready()) {
-							t = ToyKeywords._integerliteral;
-							assert intBuilder.toString().matches(t.getRegex());
-							return t;
+						i = r.read();
+						if (Character.isDigit(i)) {
+							// Continuously append integer numbers
+							intBuilder.appendCodePoint(i);
+							continue Integer_Loop;
 						}
 
-						r.mark(2);
-						c = (char)r.read();
-						if (c == 'x' || c == 'X') {
-							if (!r.ready()) {
-								r.reset();
-								t = ToyKeywords._integerliteral;
-								assert intBuilder.toString().matches(t.getRegex());
-								return t;
-							}
+						// We have an interger, now see if we really have a double
+						Double_Switch:
+						switch (i) {
+							case '.':
+								// We might have a double, so append the '.' and build it up
+								StringBuilder doubleBuilder = new StringBuilder(intBuilder);
+								doubleBuilder.appendCodePoint(i);
 
-							StringBuilder hexBuilder = new StringBuilder(intBuilder);
-							hexBuilder.append(c);
+								Double_Loop:
+								while (r.ready()) {
+									// We need at least 3 lookahead reads to know if we have a double in exponential form
+									r.mark(3);
+									i = r.read();
+									if (Character.isDigit(i)) {
+										// Continuously append more integers to build up our double
+										doubleBuilder.appendCodePoint(i);
+										continue Double_Loop;
+									}
 
-							c = (char)r.read();
-							if (isHexDigit(c)) {
-								t = ToyKeywords._integerliteral;
-								hexBuilder.append(c);
-							} else {
-								r.reset();
-								t = ToyKeywords._integerliteral;
-								assert intBuilder.toString().matches(t.getRegex());
-								return t;
-							}
-
-							while (r.ready()) {
-								r.mark(1);
-								c = (char)r.read();
-								if (isHexDigit(c)) {
-									hexBuilder.append(c);
-								} else {
-									r.reset();
-									assert hexBuilder.toString().matches(t.getRegex());
-									return t;
-								}
-							}
-
-							assert hexBuilder.toString().matches(t.getRegex());
-							return t;
-						} else {
-							r.reset();
-							c = '0';
-						}
-					}
-
-					if (Character.isDigit(c)) {
-						t = ToyKeywords._integerliteral;
-						intLoop: while (r.ready()) {
-							r.mark(1);
-							c = (char)r.read();
-							if (Character.isDigit(c)) {
-								intBuilder.append(c);
-							} else {
-								switch (c) {
-									case '.':
-										t = ToyKeywords._doubleliteral;
-
-										StringBuilder doubleBuilder = new StringBuilder(intBuilder);
-										doubleBuilder.append(c);
-
-										doubleLoop: while (r.ready()) {
-											r.mark(3);
-											c = (char)r.read();
-											if (Character.isDigit(c)) {
-												doubleBuilder.append(c);
-											} else {
-												switch (c) {
-													case 'e':
-													case 'E':
-														if (!r.ready()) {
-															r.reset();
-															assert doubleBuilder.toString().matches(t.getRegex());
-															return t;
-														}
-
-														StringBuilder expBuilder = new StringBuilder(doubleBuilder);
-														expBuilder.append(c);
-
-														c = (char)r.read();
-														if (c == '+' || c == '-') {
-															if (!r.ready()) {
-																r.reset();
-																assert doubleBuilder.toString().matches(t.getRegex());
-																return t;
-															}
-
-															expBuilder.append(c);
-
-															c = (char)r.read();
-															if (Character.isDigit(c)) {
-																expBuilder.append(c);
-																expLoop: while (r.ready()) {
-																	r.mark(1);
-																	c = (char)r.read();
-																	if (Character.isDigit(c)) {
-																		expBuilder.append(c);
-																	} else {
-																		r.reset();
-																		assert expBuilder.toString().matches(t.getRegex());
-																		return t;
-																	}
-																}
-															} else {
-																r.reset();
-																assert doubleBuilder.toString().matches(t.getRegex());
-																return t;
-															}
-														} else if (Character.isDigit(c)) {
-															expBuilder.append(c);
-															expLoop: while (r.ready()) {
-																r.mark(1);
-																c = (char)r.read();
-																if (Character.isDigit(c)) {
-																	expBuilder.append(c);
-																} else {
-																	r.reset();
-																	assert expBuilder.toString().matches(t.getRegex());
-																	return t;
-																}
-															}
-														} else {
-															r.reset();
-															assert doubleBuilder.toString().matches(t.getRegex());
-															return t;
-														}
-
-														break;
-													default:
-														r.reset();
-														break doubleLoop;
-												}
+									// We have a double, now check if we really have an exponent
+									Exponent_Switch:
+									switch (i) {
+										case 'e':
+										case 'E':
+											// We really have an exponent, so append the 'e' or 'E' and build it up
+											if (!r.ready()) {
+												// We don't have an exponent, so unread the 'e/E' and return the double
+												r.reset();
+												break Double_Loop;
 											}
-										}
 
-										break;
-									default:
-										r.reset();
-										break intLoop;
+											StringBuilder expBuilder = new StringBuilder(doubleBuilder);
+											expBuilder.appendCodePoint(i);
+											i = r.read();
+											switch (i) {
+												case '+':
+												case '-':
+													// We have a '+/-', but we need another integer afterwards
+													if (!r.ready()) {
+														// We were blocked, so return only the double and unread the 'e/E' and '+/-'
+														r.reset();
+														break Double_Loop;
+													}
+
+													// Read the character afterwards and let the fallthrough check whether it is a digit
+													expBuilder.appendCodePoint(i);
+													i = r.read();
+												default:
+													if (!Character.isDigit(i)) {
+														// The current read is not a digit, unread whatever we read and return the double
+														r.reset();
+														break Double_Loop;
+													}
+
+													// We have a valid exponent
+													expBuilder.appendCodePoint(i);
+													Exponent_Loop:
+													while (r.ready()) {
+														r.mark(1);
+														i = r.read();
+														if (Character.isDigit(i)) {
+															// Continuously append integers to build it up
+															expBuilder.appendCodePoint(i);
+															continue Exponent_Loop;
+														}
+
+														r.reset();
+														break Exponent_Loop;
+													}
+
+													// We cannot perform any more read operations, but we have read an exponent so far
+													assert expBuilder.toString().matches(ToyKeywords._doubleliteral.getRegex());
+													return ToyKeywords._doubleliteral;
+											}
+										default:
+											// We don't have an exponent, so unread the last few characters and return the double
+											r.reset();
+											break Double_Loop;
+									}
 								}
-							}
-						}
 
-						assert intBuilder.toString().matches(t.getRegex());
-						return t;
-					}
-
-					continue;
-				} else if (c == '\"') {
-					StringBuilder stringBuilder = new StringBuilder();
-					stringBuilder.append(c);
-
-					stringReader: while (r.ready()) {
-						c = (char)r.read();
-						switch (c) {
-							case '\"':
-								t = ToyKeywords._stringliteral;
-								stringBuilder.append(c);
-								break stringReader;
-							case '\n':
-								t = null;
-								break stringReader;
+								// We cannot perform any more read operations, but we have read a double so far
+								assert doubleBuilder.toString().matches(ToyKeywords._doubleliteral.getRegex());
+								return ToyKeywords._doubleliteral;
 							default:
-								stringBuilder.append(c);
-								continue stringReader;
+								// We don't have a double, so unread the last character and return the integer
+								r.reset();
+								break Integer_Loop;
 						}
 					}
 
-					if (t != null) {
-						assert stringBuilder.toString().matches(t.getRegex());
-					}
-
-					return t;
+					// We cannot perform any more read operations from the initial integer check, so return the interger literal we parsed
+					assert intBuilder.toString().matches(ToyKeywords._integerliteral.getRegex());
+					return ToyKeywords._integerliteral;
 				}
 
-				switch (c) {
-					case '+':
-						t = ToyKeywords._plus;
-						break;
-					case '-':
-						t = ToyKeywords._minus;
-						break;
-					case '*':
-						t = ToyKeywords._multiplication;
-						break;
+				switch (i) {
+					case '\"':
+						StringBuilder stringBuilder = new StringBuilder();
+						String_Loop:
+						while (r.ready()) {
+							i = r.read();
+							switch (i) {
+								case '\"':
+									break String_Loop;
+								case '\n':
+									return null;
+								default:
+									stringBuilder.appendCodePoint(i);
+							}
+						}
+
+						// We cannot perform any more read operations, but we have a string literal
+						assert stringBuilder.toString().matches(ToyKeywords._stringliteral.getRegex());
+						return ToyKeywords._stringliteral;
 					case '/':
 						if (!r.ready()) {
-							break;
+							return ToyKeywords._division;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
+						i = r.read();
+						switch (i) {
 							case '/':
-								while (r.ready()) {
-									c = (char)r.read();
-									if (c == '\n') {
-										continue reader;
-									}
+								// There is no ready check here because we need to read until EOL or EOF else error
+								while (i != '\n' && i != -1) {
+									i = r.read();
 								}
 
-								break;
+								return next(r);
 							case '*':
-								while (r.ready()) {
-									c = (char)r.read();
-									if (c == '*') {
-										if (r.ready()) {
-											r.mark(1);
-											c = (char)r.read();
-											if (c == '/') {
-												continue reader;
-											}
-
-											r.reset();
+								// There is no ready check here because we need to read until "*/" or EOF else error
+								Block_Comment_Loop:
+								while (i != -1) {
+									i = r.read();
+									while (i == '*') {
+										i = r.read();
+										if (i == '/') {
+											break Block_Comment_Loop;
 										}
 									}
 								}
 
-								break;
+								return next(r);
 							default:
 								r.reset();
-								t = ToyKeywords._division;
+								return ToyKeywords._division;
 						}
-
-						break;
 					case '<':
 						if (!r.ready()) {
-							break;
+							return ToyKeywords._less;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '=':
-								t = ToyKeywords._lessequal;
-								break;
+						i = r.read();
+						switch (i) {
+							case '=': return ToyKeywords._lessequal;
 							default:
 								r.reset();
-								t = ToyKeywords._less;
+								return ToyKeywords._less;
 						}
-
-						break;
 					case '>':
 						if (!r.ready()) {
-							break;
+							return ToyKeywords._less;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '=':
-								t = ToyKeywords._greaterequal;
-								break;
+						i = r.read();
+						switch (i) {
+							case '=': return ToyKeywords._greaterequal;
 							default:
 								r.reset();
-								t = ToyKeywords._greater;
+								return ToyKeywords._greater;
 						}
-
-						break;
 					case '=':
 						if (!r.ready()) {
-							break;
+							return ToyKeywords._assignop;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '=':
-								t = ToyKeywords._equal;
-								break;
+						i = r.read();
+						switch (i) {
+							case '=': return ToyKeywords._equal;
 							default:
 								r.reset();
-								t = ToyKeywords._assignop;
+								return ToyKeywords._assignop;
 						}
-
-						break;
 					case '!':
 						if (!r.ready()) {
-							break;
+							return ToyKeywords._not;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '=':
-								t = ToyKeywords._notequal;
-								break;
+						i = r.read();
+						switch (i) {
+							case '=': return ToyKeywords._notequal;
 							default:
 								r.reset();
-								t = ToyKeywords._not;
+								return ToyKeywords._not;
 						}
-
-						break;
 					case '&':
 						if (!r.ready()) {
-							break;
+							return null;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '&':
-								t = ToyKeywords._and;
-								break;
+						i = r.read();
+						switch (i) {
+							case '&': return ToyKeywords._and;
 							default:
 								r.reset();
-								t = null;
+								return null;
 						}
-
-						break;
 					case '|':
 						if (!r.ready()) {
-							break;
+							return null;
 						}
 
 						r.mark(1);
-						c = (char)r.read();
-						switch (c) {
-							case '|':
-								t = ToyKeywords._or;
-								break;
+						i = r.read();
+						switch (i) {
+							case '|': return ToyKeywords._or;
 							default:
 								r.reset();
-								t = null;
+								return null;
 						}
-
-						break;
-					case ';':
-						t = ToyKeywords._semicolon;
-						break;
-					case ',':
-						t = ToyKeywords._comma;
-						break;
-					case '.':
-						t = ToyKeywords._period;
-						break;
-					case '(':
-						t = ToyKeywords._leftparen;
-						break;
-					case ')':
-						t = ToyKeywords._rightparen;
-						break;
-					case '[':
-						t = ToyKeywords._leftbracket;
-						break;
-					case ']':
-						t = ToyKeywords._rightbracket;
-						break;
-					case '{':
-						t = ToyKeywords._leftbrace;
-						break;
-					case '}':
-						t = ToyKeywords._rightbrace;
-						break;
+					case '+': return ToyKeywords._plus;
+					case '-': return ToyKeywords._minus;
+					case '*': return ToyKeywords._multiplication;
+					case ';': return ToyKeywords._semicolon;
+					case ',': return ToyKeywords._comma;
+					case '.': return ToyKeywords._period;
+					case '(': return ToyKeywords._leftparen;
+					case ')': return ToyKeywords._rightparen;
+					case '[': return ToyKeywords._leftbracket;
+					case ']': return ToyKeywords._rightbracket;
+					case '{': return ToyKeywords._leftbrace;
+					case '}': return ToyKeywords._rightbrace;
 				}
-
-				return t;
 			}
 		} catch (IOException e) {
-			if ((int)c == -1) {
+		} finally {
+			if (i == -1) {
 				return ToyKeywords._EOF;
 			}
 		}
@@ -480,6 +432,10 @@ public class ToyLexer extends AbstractLexer {
 	 * @return {@code true} if it is a hex character, otherwise {@code false}.
 	 */
 	private boolean isHexDigit(char c) {
-		return Character.isDigit(c) || ('A' <= c && c <= 'F') || ('a' <= c && c <= 'f');
+		return isHexDigit((int)c);
+	}
+
+	private boolean isHexDigit(int codePoint) {
+		return Character.isDigit(codePoint) || ('A' <= codePoint && codePoint <= 'F') || ('a' <= codePoint && codePoint <= 'f');
 	}
 }

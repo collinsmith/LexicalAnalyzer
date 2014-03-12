@@ -24,7 +24,7 @@ public class Main {
 					BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
 				TokenStream stream = l.lex(br);
 				while (stream.hasMore()) {
-					Token t = stream.getNext();
+					Token t = stream.next();
 					//...
 				}
 			} catch (IOException e) {
