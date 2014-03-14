@@ -43,6 +43,7 @@ public class ToyLexer extends AbstractLexer {
 	 *	the end of file has been reached, or {@code null} if the next token
 	 *	is invalid.
 	 */
+	@Override
 	public Token next(Reader r) {
 		Preconditions.checkArgument(r.markSupported(), "Reader must support marking for efficient analyzing!");
 
@@ -268,6 +269,12 @@ public class ToyLexer extends AbstractLexer {
 							switch (i) {
 								case '\"':
 									break String_Loop;
+								/*case '\r':
+									r.mark(1);
+									i = r.read();
+									if (i != '\n') {
+										r.reset();
+									}*/
 								case '\n':
 									return null;
 								default:
