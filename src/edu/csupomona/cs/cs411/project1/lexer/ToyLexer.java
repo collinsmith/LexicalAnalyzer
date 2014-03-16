@@ -19,9 +19,9 @@ public class ToyLexer extends AbstractLexer {
 	private static final char IDENTIFIER_SENTINEL = '$';
 
 	/**
-	 * {@link MultiTrie} used to store both {@link Keywords#ACTUAL_KEYWORDS}
+	 * {@link MultiTrie} used to store both {@link ToyKeywords#ACTUAL_KEYWORDS}
 	 * and other identifiers accepted under the constraints specified by
-	 * {@link Keywords#_id}.
+	 * {@link ToyKeywords#_id}.
 	 */
 	private MultiTrie<String> trie;
 
@@ -442,6 +442,14 @@ public class ToyLexer extends AbstractLexer {
 		return isHexDigit((int)c);
 	}
 
+	/**
+	 * Returns whether or not a specified character is a hex character.
+	 *
+	 * E.g. {@code 0-9, a-f, A-F} are all valid hexadecimal characters.
+	 *
+	 * @param codePoint character to check
+	 * @return {@code true} if it is a hex character, otherwise {@code false}.
+	 */
 	private boolean isHexDigit(int codePoint) {
 		return Character.isDigit(codePoint) || ('A' <= codePoint && codePoint <= 'F') || ('a' <= codePoint && codePoint <= 'f');
 	}
